@@ -181,6 +181,7 @@ int dijkstra(int startID, Node *nodes, int endID) {
     st = (int *) malloc(N_NODES * sizeof(int));
 
     if (startID >= N_NODES || startID < 0) return -1;
+    if (endID>= N_NODES || endID < 0) return -1;
 
     //initial insertion of nodes in PQ
     for (int i = 0; i < N_NODES; i++) {
@@ -232,4 +233,5 @@ int dijkstra(int startID, Node *nodes, int endID) {
         fprintf(stdout, "%d", startID);
         fprintf(stdout, "\nWeight=%d", nodes[endID].getPQ_Value());
     }
+return 1;
 }
