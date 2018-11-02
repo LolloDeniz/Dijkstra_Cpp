@@ -19,6 +19,7 @@ int PQ::PARENT(int i) {
 void PQ::PQinit(int size) {
     heapsize = 0;
     this->array = (Node **) malloc(size * sizeof(Node *));
+    this->qp=(int*) malloc(size* sizeof(int));
 }
 
 
@@ -31,19 +32,27 @@ void PQ::PQinsert(Node *node) {
     i = this->heapsize++;
     while ((i >= 1) && (array[PARENT(i)]->getPQ_Value() < node->getPQ_Value())) {
         this->array[i] = this->array[PARENT(i)];
+        qp[i]=qp[PARENT(i)];
         i = (i - 1) / 2;
     }
     array[i] = node;
+    qp[i]=node->getID();
     return;
 }
 
 
 void PQ::Swap(int n1, int n2) {
     Node *temp;
+    int t;
 
     temp = array[n1];
+    t=array[n1]->getID();
+
     array[n1] = array[n2];
+    qp[n1]=qp[n2];
+
     array[n2] = temp;
+    qp[n2]=t;
     return;
 }
 
@@ -100,11 +109,12 @@ void PQ::PQchange(int pos, Node *node) {
 }
 
 int PQ::PQfindPos(Node *node) {
-    for (int i = 0; i < this->heapsize; i++) {
+    /*for (int i = 0; i < this->heapsize; i++) {
         if (array[i]->getID() == node->getID())
             return i;
     }
-    return -1;
+    return -1;*/
+    return qp[node->getID()];
 }
 
 PQ::PQ() {};

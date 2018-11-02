@@ -30,6 +30,7 @@ public:
 private:
     int heapsize;
     Node **array;
+    int* qp;
 
     int LEFT(int i);
 
