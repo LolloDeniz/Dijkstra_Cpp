@@ -6,8 +6,9 @@
 #include <cstdlib>
 #include <time.h>
 #include <chrono>
+#include <fstream>
 
-#define VERBOSE false
+#define VERBOSE true
 #define N_NODES 15000
 #define N_EDGES 2.5*N_NODES
 #define MAX_VALUE 30
@@ -19,9 +20,11 @@ int _generateNodes(Node *nodes, Node *current, int h, int treeHeight);
 
 int generateEdges(Node *nodes);
 
-int testEdges(Node *nodes);
+int testEdges(Node *nodes, int n_nodes);
 
 int dijkstra(int startID, Node *nodes, int endID);
+
+Node* readJSON(char* path, int n_nodes);
 
 int n = 0; //progressive ID
 
@@ -30,6 +33,11 @@ int main() {
     //while(1){
         n=0;
         using namespace std::chrono;
+
+        //reading from json
+        //Node* nodes;
+        //nodes=readJSON("../edges.json", N_NODES);
+
         milliseconds tic, toc;
 
         //setvbuf(stdout, NULL, _IONBF, 0);
@@ -40,6 +48,7 @@ int main() {
         srand((unsigned) time(0));
 
         Node nodes[N_NODES];
+
         //generation of nodes
         //for ensuring the complete connection of the graph, the nodes are a tree
         generateNodes(nodes);
@@ -65,7 +74,7 @@ int main() {
 
 
         //diagnostics tests
-        testEdges(nodes);
+        testEdges(nodes, N_NODES);
 
         fprintf(stdout, "\n\nElapsed time: %f ms", time_span.count());
     //}
@@ -123,11 +132,11 @@ int _generateNodes(Node *nodes, Node *current, int h, int treeHeight) {
 
 }
 
-int testEdges(Node *nodes) {
+int testEdges(Node *nodes, int n_nodes) {
     int e = 0;
     int sum_wh = 0;
 
-    for (int i = 0; i < N_NODES; i++) {
+    for (int i = 0; i < n_nodes; i++) {
         if(VERBOSE)
             printf("\nNODE %d CONNECTED TO ", i);
         for (int j = 0; j < nodes[i].getN_Edges(); j++) {
@@ -139,9 +148,9 @@ int testEdges(Node *nodes) {
         }
     }
 
-    fprintf(stdout, "\nNumber of nodes: %d", N_NODES);
+    fprintf(stdout, "\nNumber of nodes: %d", n_nodes);
     fprintf(stdout, "\nNumber of edges: %d", (e / 2));
-    fprintf(stdout, "\nAverage edges per node: %f", ((e / 2) / (float) N_NODES));
+    fprintf(stdout, "\nAverage edges per node: %f", ((e / 2) / (float) n_nodes));
 
 }
 
@@ -236,3 +245,42 @@ int dijkstra(int startID, Node *nodes, int endID) {
 return 1;
 }
 
+Node* readJSON(char* path, int n_nodes){
+
+    int ID1, ID2, distance;
+    char toIgnore[20];
+    FILE* fp;
+
+    char line[50];
+
+    fp=fopen(path, "r");
+    if(fp==NULL){
+        fprintf(stderr, "Unable to open %s", path);
+        return NULL;
+    }
+
+    Node* nodes=(Node*) malloc(n_nodes* sizeof(Node));
+
+    for(int i=0;i<n_nodes;i++) nodes[i]=Node(i);
+
+    fgets(line, 50, fp);   //[
+    for(int i=0;i<n_nodes;i++){
+
+        fgets(line, 50, fp);  //{
+        fgets(line, 50, fp);    //ID1
+        sscanf(line, "%s %d,", toIgnore, &ID1);
+
+        fgets(line, 50, fp);    //ID2
+        sscanf(line, "%s %d,", toIgnore, &ID2);
+
+        fgets(line, 50, fp);    //DISTANCE
+        sscanf(line, "%s %d,", toIgnore, &distance);
+
+        fgets(line, 50, fp);    //}
+
+        nodes[ID1].addEdge(ID2, distance);
+        nodes[ID2].addEdge(ID1, distance);
+        //fprintf(stdout,"%d %d %d\n", ID1, ID2, distance);
+    }
+    return nodes;
+}
