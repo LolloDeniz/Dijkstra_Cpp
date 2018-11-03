@@ -12,7 +12,7 @@
 #define N_NODES 15000
 #define N_EDGES 2.5*N_NODES
 
-int dijkstra(int startID, Node *nodes, int endID, int n_nodes);
+int dijkstra(int startID, Node *nodes, int endID, int n_nodes, int* path);
 Node* readJSON(char* path, int n_nodes);
 
 int main() {
@@ -52,7 +52,7 @@ int main() {
         tic=duration_cast< milliseconds >(system_clock::now().time_since_epoch());
 
         //let's find the way!
-        dijkstra(startID, nodes, endID, N_NODES);
+        dijkstra(startID, nodes, endID, N_NODES, NULL);
 
         toc=duration_cast< milliseconds >(system_clock::now().time_since_epoch());
         duration<double, std::milli> time_span = toc - tic;
@@ -67,7 +67,7 @@ int main() {
     return 0;
 }
 
-int dijkstra(int startID, Node *nodes, int endID, int n_nodes) {
+int dijkstra(int startID, Node *nodes, int endID, int n_nodes, int* path) {
 
     Node *v, *w;
     Edge *t;
@@ -80,8 +80,8 @@ int dijkstra(int startID, Node *nodes, int endID, int n_nodes) {
     int *st;
     st = (int *) malloc(n_nodes * sizeof(int));
 
-    if (startID >= n_nodes || startID < 0) return -1;
-    if (endID>= n_nodes || endID < 0) return -1;
+    if (startID >= n_nodes || startID < 0) return NULL;
+    if (endID>= n_nodes || endID < 0) return NULL;
 
     //initial insertion of nodes in PQ
     for (int i = 0; i < n_nodes; i++) {
@@ -126,14 +126,24 @@ int dijkstra(int startID, Node *nodes, int endID, int n_nodes) {
     }
         fprintf(stdout, "\n\nPath from %d to %d:\n", startID, endID);
         int j = endID;
+        int n_steps=0;
         while (st[j] != j) {
             fprintf(stdout, "%d->", j);
             j = st[j];
+            n_steps++;
         }
         fprintf(stdout, "%d", startID);
         fprintf(stdout, "\nWeight=%d", nodes[endID].getPQ_Value());
 
-return 1;
+
+    path=(int*)malloc(n_steps* sizeof(int));
+
+    j=endID;
+    for(int i=n_steps-2; i>=0; i--, j=st[j]){
+        path[i]=st[j];
+    }
+
+    return n_steps-1;
 }
 
 Node* readJSON(char* path, int n_nodes){
