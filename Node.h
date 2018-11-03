@@ -4,7 +4,8 @@
 
 #ifndef C_VERSION_NODE_H
 #define C_VERSION_NODE_H
-
+#define MAX_VALUE 30
+#define STD_VALUE 15
 
 
 class Node {
@@ -24,7 +25,14 @@ public:
     int getN_Edges();
     int getPQ_Value();
     void setPQ_Value(int value);
-};
+
+    //static functions
+    static int generateNodes(Node *nodes, int n_nodes);
+    static int _generateNodes(Node *nodes, Node *current, int h, int treeHeight, int* n, int n_nodes);
+    static int generateEdges(Node *nodes, int n_nodes, int n_edges);
+    static int testEdges(Node *nodes, int n_nodes);
+
+    };
 #endif //C_VERSION_NODE_H
 
 

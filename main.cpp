@@ -1,42 +1,29 @@
 #include <iostream>
-#include "Node.h"
-#include "PQ.h"
 #include <math.h>
 #include <limits.h>
 #include <cstdlib>
 #include <time.h>
 #include <chrono>
 #include <fstream>
+#include "Node.h"
+#include "PQ.h"
 
-#define VERBOSE true
+#define VERBOSE false
 #define N_NODES 15000
 #define N_EDGES 2.5*N_NODES
-#define MAX_VALUE 30
-#define STD_VALUE MAX_VALUE/2
 
-int generateNodes(Node *nodes);
-
-int _generateNodes(Node *nodes, Node *current, int h, int treeHeight);
-
-int generateEdges(Node *nodes);
-
-int testEdges(Node *nodes, int n_nodes);
-
-int dijkstra(int startID, Node *nodes, int endID);
-
+int dijkstra(int startID, Node *nodes, int endID, int n_nodes);
 Node* readJSON(char* path, int n_nodes);
-
-int n = 0; //progressive ID
 
 int main() {
 
     //while(1){
-        n=0;
         using namespace std::chrono;
 
         //reading from json
         //Node* nodes;
         //nodes=readJSON("../edges.json", N_NODES);
+        //int startID=8191, endID=11548;
 
         milliseconds tic, toc;
 
@@ -45,36 +32,34 @@ int main() {
 
 
         //init of random function
-        srand((unsigned) time(0));
+        srand((unsigned) time(nullptr));
 
         Node nodes[N_NODES];
 
         //generation of nodes
         //for ensuring the complete connection of the graph, the nodes are a tree
-        generateNodes(nodes);
+        Node::generateNodes(nodes, N_NODES);
 
         //random generation of edges
-        generateEdges(nodes);
+        Node::generateEdges(nodes,N_NODES, N_EDGES);
 
         //random generation of start and end
-        int stardID = (rand() % N_NODES);
+        int startID = (rand() % N_NODES);
         int endID;
-        while ((endID = (rand() % N_NODES)) == stardID);
+        while ((endID = (rand() % N_NODES)) == startID);
 
 
         tic=duration_cast< milliseconds >(system_clock::now().time_since_epoch());
 
         //let's find the way!
-        dijkstra(stardID, nodes, endID);
+        dijkstra(startID, nodes, endID, N_NODES);
 
         toc=duration_cast< milliseconds >(system_clock::now().time_since_epoch());
-
         duration<double, std::milli> time_span = toc - tic;
 
 
-
         //diagnostics tests
-        testEdges(nodes, N_NODES);
+        Node::testEdges(nodes, N_NODES);
 
         fprintf(stdout, "\n\nElapsed time: %f ms", time_span.count());
     //}
@@ -82,118 +67,24 @@ int main() {
     return 0;
 }
 
-int generateNodes(Node *nodes) {
-
-    int treeHeight = (int) floor(log2(N_NODES));
-    nodes[0] = Node(0);
-
-    _generateNodes(nodes, &nodes[0], 1, treeHeight);
-}
-
-int _generateNodes(Node *nodes, Node *current, int h, int treeHeight) {
-
-    //left
-    if (n < N_NODES - 1 && h <= treeHeight) {
-        n++;
-        nodes[n] = Node(n);
-
-        current->addEdge(n, STD_VALUE);
-        nodes[n].addEdge(current->getID(), STD_VALUE);
-
-        if(VERBOSE){
-            for (int i = 0; i < h; i++) {
-                fprintf(stdout, "|\t");
-            }
-            fprintf(stdout, "left son of %d created (ID=%d)\n", current->getID(), n);
-            fflush(stdout);
-        }
-
-        _generateNodes(nodes, &nodes[n], h + 1, treeHeight);
-    }
-
-    //right
-    if (n < N_NODES - 1 && h <= treeHeight) {
-        n++;
-        nodes[n] = Node(n);
-
-        current->addEdge(n, STD_VALUE);
-        nodes[n].addEdge(current->getID(), STD_VALUE);
-
-        if(VERBOSE){
-            for (int i = 0; i < h; i++) {
-                fprintf(stdout, "|\t");
-            }
-            fprintf(stdout, "right son of %d created (ID=%d)\n", current->getID(), n);
-            fflush(stdout);
-        }
-
-        _generateNodes(nodes, &nodes[n], h + 1, treeHeight);
-    }
-
-}
-
-int testEdges(Node *nodes, int n_nodes) {
-    int e = 0;
-    int sum_wh = 0;
-
-    for (int i = 0; i < n_nodes; i++) {
-        if(VERBOSE)
-            printf("\nNODE %d CONNECTED TO ", i);
-        for (int j = 0; j < nodes[i].getN_Edges(); j++) {
-            if(VERBOSE)
-                printf("%d ", nodes[i].getEdges()[j].getID_To());
-
-            e++;
-            sum_wh += nodes[i].getEdges()[j].getValue();
-        }
-    }
-
-    fprintf(stdout, "\nNumber of nodes: %d", n_nodes);
-    fprintf(stdout, "\nNumber of edges: %d", (e / 2));
-    fprintf(stdout, "\nAverage edges per node: %f", ((e / 2) / (float) n_nodes));
-
-}
-
-int generateEdges(Node *nodes) {
-
-    int ID1, ID2, value;
-
-
-    //  |
-    // \|/ I have to subtract the number of already existing edges (equals to number of nodes)
-
-    for (int i = N_NODES; i < N_EDGES; i++) {
-        ID1 = (rand() % N_NODES);
-        while ((ID2 = (rand() % N_NODES)) == ID1);
-        value = rand() % MAX_VALUE;
-
-        nodes[ID1].addEdge(ID2, value);
-        nodes[ID2].addEdge(ID1, value);
-    }
-
-    fprintf(stdout, "\n\n");
-
-}
-
-int dijkstra(int startID, Node *nodes, int endID) {
+int dijkstra(int startID, Node *nodes, int endID, int n_nodes) {
 
     Node *v, *w;
     Edge *t;
 
-
     //init heap-based priority queue
     PQ pq = PQ();
-    pq.PQinit(N_NODES);
+    pq.PQinit(n_nodes);
 
     //init of parent array
     int *st;
-    st = (int *) malloc(N_NODES * sizeof(int));
+    st = (int *) malloc(n_nodes * sizeof(int));
 
-    if (startID >= N_NODES || startID < 0) return -1;
-    if (endID>= N_NODES || endID < 0) return -1;
+    if (startID >= n_nodes || startID < 0) return -1;
+    if (endID>= n_nodes || endID < 0) return -1;
 
     //initial insertion of nodes in PQ
-    for (int i = 0; i < N_NODES; i++) {
+    for (int i = 0; i < n_nodes; i++) {
         st[i] = -1;
         pq.PQinsert(&nodes[i]);
         //initial value of distance is INT_MAX
@@ -225,14 +116,14 @@ int dijkstra(int startID, Node *nodes, int endID) {
     }
 
     if(VERBOSE){
-        for (int i = 0; i < N_NODES; i++) {
+        for (int i = 0; i < n_nodes; i++) {
             fprintf(stdout, "parent of %d id %d \n", i, st[i]);
         }
         fprintf(stdout, "min distances from %d\n", startID);
-        for (int i = 0; i < N_NODES; i++) {
+        for (int i = 0; i < n_nodes; i++) {
             fprintf(stdout, "%d : %d metres\n", i, nodes[i].getPQ_Value());
         }
-
+    }
         fprintf(stdout, "\n\nPath from %d to %d:\n", startID, endID);
         int j = endID;
         while (st[j] != j) {
@@ -241,7 +132,7 @@ int dijkstra(int startID, Node *nodes, int endID) {
         }
         fprintf(stdout, "%d", startID);
         fprintf(stdout, "\nWeight=%d", nodes[endID].getPQ_Value());
-    }
+
 return 1;
 }
 
@@ -253,34 +144,38 @@ Node* readJSON(char* path, int n_nodes){
 
     char line[50];
 
+    //open file
     fp=fopen(path, "r");
     if(fp==NULL){
         fprintf(stderr, "Unable to open %s", path);
         return NULL;
     }
 
+    //init array of nodes
     Node* nodes=(Node*) malloc(n_nodes* sizeof(Node));
-
     for(int i=0;i<n_nodes;i++) nodes[i]=Node(i);
 
-    fgets(line, 50, fp);   //[
-    for(int i=0;i<n_nodes;i++){
 
-        fgets(line, 50, fp);  //{
-        fgets(line, 50, fp);    //ID1
+    //read the json line by line
+    //on the side is commented the expected result of the read
+
+    fgets(line, 50, fp);   //[
+
+      while((fgets(line, 50, fp))&& line[1]!=']'){  //{
+        fgets(line, 50, fp);    //ID1=...
         sscanf(line, "%s %d,", toIgnore, &ID1);
 
-        fgets(line, 50, fp);    //ID2
+        fgets(line, 50, fp);    //ID2=...
         sscanf(line, "%s %d,", toIgnore, &ID2);
 
-        fgets(line, 50, fp);    //DISTANCE
+        fgets(line, 50, fp);    //DISTANCE=...
         sscanf(line, "%s %d,", toIgnore, &distance);
 
         fgets(line, 50, fp);    //}
 
         nodes[ID1].addEdge(ID2, distance);
         nodes[ID2].addEdge(ID1, distance);
-        //fprintf(stdout,"%d %d %d\n", ID1, ID2, distance);
+        //fprintf(stdout,"%d %d %d\n", ID1, ID2, distance); //debug
     }
     return nodes;
 }
