@@ -121,9 +121,9 @@ int Node::generateEdges(Node *nodes, int n_nodes, int n_edges) {
     srand((unsigned) time(nullptr));
 
     //  |
-    // \|/ I have to subtract the number of already existing edges (equals to number of nodes)
+    // \|/ I have to subtract the number of already existing edges (equals to number of nodes - 1)
 
-    for (int i = n_nodes; i < n_edges; i++) {
+    for (int i = n_nodes-1; i < n_edges; i++) {
         ID1 = (rand() % n_nodes);
         while ((ID2 = (rand() % n_nodes)) == ID1);
         value = rand() % MAX_VALUE;
